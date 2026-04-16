@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Multi-Camera Self-Calibration in Sports Motion Capture: Leveraging Human and Stick Poses</title>
+  <style>
+    /* ── Reset & Base ───────────────────────────────────── */
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+      background: linear-gradient(to bottom, #ffffff 0%, #f4f6fa 100%);
+      color: #222;
+      line-height: 1.7;
+      min-height: 100vh;
+    }
+
+    a {
+      color: #2196F3;
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    /* ── Layout ─────────────────────────────────────────── */
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 32px;
+    }
+
+    section {
+      padding: 56px 0 40px;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    section:last-of-type {
+      border-bottom: none;
+    }
+
+    /* ── Header / Title ─────────────────────────────────── */
+    header {
+      background: #ffffff;
+      padding: 70px 24px 50px;
+      text-align: center;
+      border-bottom: 1px solid #e0e0e0;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+    }
+
+    header h1 {
+      font-size: 2.5rem;
+      font-weight: 800;
+      line-height: 1.25;
+      color: #111;
+      max-width: 980px;
+      margin: 0 auto 24px;
+    }
+
+    .authors {
+      font-size: 1.2rem;
+      color: #333;
+      margin-bottom: 12px;
+    }
+
+    .authors span {
+      display: inline-block;
+      margin: 0 6px;
+    }
+
+    .affiliations {
+      font-size: 1.1rem;
+      color: #666;
+      margin-bottom: 30px;
+    }
+
+    .links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      justify-content: center;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 24px;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: 600;
+      background: #2196F3;
+      color: #ffffff;
+      box-shadow: 0 4px 6px rgba(33, 150, 243, 0.2);
+      transition: all 0.2s ease-in-out;
+    }
+
+    .btn:hover {
+      background: #1976D2;
+      color: #fff;
+      text-decoration: none;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 10px rgba(33, 150, 243, 0.3);
+    }
+
+    .btn.btn-outline {
+      background: transparent;
+      border: 2px solid #2196F3;
+      color: #2196F3;
+      box-shadow: none;
+    }
+
+    .btn.btn-outline:hover {
+      background: #2196F3;
+      color: #fff;
+    }
+
+    .btn svg {
+      width: 18px;
+      height: 18px;
+      fill: currentColor;
+    }
+
+    /* ── Section Headings ───────────────────────────────── */
+    h2 {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 24px;
+      color: #111;
+      position: relative;
+      display: inline-block;
+    }
+
+    h2::after {
+      content: "";
+      position: absolute;
+      bottom: -4px;
+      left: 0;
+      width: 50%;
+      height: 3px;
+      background: #2196F3;
+      border-radius: 2px;
+    }
+
+    h3 {
+      font-size: 1.4rem;
+      font-weight: 600;
+      margin: 32px 0 16px;
+      color: #333;
+    }
+
+    /* ── Figures ────────────────────────────────────────── */
+    figure {
+      margin: 32px 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .image-link {
+      display: block;
+      width: 100%;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+      cursor: zoom-in;
+    }
+
+    figure img {
+      display: block;
+      width: 100%;
+      height: auto;
+      background: #f8f9fa;
+      transition: transform 0.4s ease;
+    }
+
+    .image-link:hover img {
+      transform: scale(1.02);
+    }
+
+    figcaption {
+      margin-top: 16px;
+      font-size: 1rem;
+      color: #555;
+      line-height: 1.6;
+      text-align: justify;
+      width: 100%;
+      max-width: 900px;
+      background: #f8fbff;
+      padding: 16px;
+      border-left: 4px solid #2196F3;
+      border-radius: 0 8px 8px 0;
+    }
+
+    figcaption strong {
+      color: #111;
+      font-weight: 600;
+    }
+
+    /* ── Abstract & Text Blocks ─────────────────────────── */
+    .text-block p {
+      font-size: 1.15rem;
+      text-align: justify;
+      color: #444;
+      margin-bottom: 16px;
+      max-width: 900px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .text-block ul {
+      font-size: 1.15rem;
+      color: #444;
+      line-height: 1.7;
+      margin-left: 20px;
+      margin-bottom: 16px;
+      max-width: 880px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .text-block li {
+      margin-bottom: 8px;
+    }
+
+    /* ── Grid Layouts ───────────────────────────────────── */
+    .grid-2col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      align-items: start;
+    }
+
+    .grid-3col {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    @media (max-width: 768px) {
+
+      .grid-2col,
+      .grid-3col {
+        grid-template-columns: 1fr;
+      }
+
+      header h1 {
+        font-size: 2rem;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <h1>Multi-Camera Self-Calibration in Sports Motion Capture:<br>Leveraging Human and Stick Poses</h1>
+
+    <p class="authors">
+      <span>Fan Yang<sup>1</sup></span>,
+      <span>Changsoo Jung<sup>1,2</sup></span>,
+      <span>Ryosuke Kawamura<sup>1</sup></span>,
+      <span>Hon Yung Wong<sup>1</sup></span>
+    </p>
+    <p class="affiliations">
+      <sup>1</sup>Fujitsu Research, <sup>2</sup>Colorado State University<br>
+      <strong>FG 2026</strong>
+    </p>
+
+    <div class="links">
+      <a class="btn btn-outline" href="javascript:void(0)" aria-label="Paper">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path
+            d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" />
+        </svg>
+        Paper
+      </a>
+      <a class="btn" href="javascript:void(0)" aria-label="Benchmark (TBA)" style="opacity: 0.7; cursor: not-allowed;">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path
+            d="M12 .5C5.65.5.5 5.65.5 12c0 5.1 3.31 9.42 7.9 10.95.58.1.79-.25.79-.55v-2.08c-3.2.7-3.88-1.54-3.88-1.54-.52-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.76 2.7 1.25 3.36.96.1-.75.4-1.25.73-1.54-2.55-.29-5.24-1.28-5.24-5.7 0-1.26.45-2.29 1.19-3.09-.12-.3-.52-1.46.11-3.05 0 0 .97-.31 3.18 1.19a11.1 11.1 0 0 1 5.8 0c2.2-1.5 3.17-1.19 3.17-1.19.63 1.59.23 2.75.12 3.05.74.8 1.19 1.83 1.19 3.09 0 4.43-2.7 5.41-5.27 5.69.42.36.79 1.07.79 2.16v3.2c0 .31.21.67.8.55C20.19 21.42 23.5 17.1 23.5 12 23.5 5.65 18.35.5 12 .5z" />
+        </svg>
+        Benchmark (TBA)
+      </a>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <section id="demo" style="text-align: center; padding-top: 40px; border-bottom: none;">
+      <figure style="margin-top: 0;">
+        <a href="assets/images/demo.jpg" target="_blank" class="image-link" aria-label="Open image in full resolution"
+          style="width: 70%; margin: 0 auto;">
+          <img src="assets/images/demo.jpg" alt="Illustration of our proposal" />
+        </a>
+        <figcaption style="margin-left: auto; margin-right: auto; max-width: 900px; text-align: left;">
+          <strong>Illustration of our proposal.</strong> For sports involving stick-like implements (e.g. golf,
+          baseball, hockey, and kendo), we perform a novel tool-free multi-camera extrinsic calibration by leveraging
+          both the stick and the human poses.
+        </figcaption>
+      </figure>
+    </section>
+
+    <section id="abstract" class="text-block">
+      <h2 style="display: block; text-align: center; margin-bottom: 30px;">Abstract</h2>
+      <p>
+        Multi-camera systems are widely employed in sports to capture the 3D motion of athletes and equipment, yet
+        calibrating their extrinsic parameters remains costly and labor-intensive. We introduce an efficient, tool-free
+        method for multi-camera extrinsic calibration tailored to sports involving stick-like implements (e.g. golf
+        clubs, bats, hockey sticks).
+      </p>
+      <p>
+        Our approach jointly exploits two complementary cues from synchronized multi-camera videos: (i) human body
+        keypoints with unknown metric scale and (ii) a rigid stick-like implement of known length. We formulate a
+        three-stage optimization pipeline that refines camera extrinsics, reconstructs human and stick trajectories, and
+        resolves global scale via the stick-length constraint. Our method achieves accurate extrinsic calibration
+        without dedicated calibration tools.
+      </p>
+      <p>
+        To benchmark this task, we present the first dataset for multi-camera self-calibration in stick-based sports,
+        consisting of synthetic sequences across four sports categories with 3 to 10 cameras. Comprehensive experiments
+        demonstrate that our method delivers SOTA performance, achieving low rotation and translation errors.
+      </p>
+    </section>
+
+    <section id="method">
+      <h2 style="display: block; text-align: center; margin-bottom: 30px;">Methodology</h2>
+      <figure>
+        <a href="assets/images/ba.jpg" target="_blank" class="image-link" aria-label="Open image in full resolution"
+          style="width: 70%; margin: 0 auto;">
+          <img src="assets/images/ba.jpg" alt="Three-stage optimization framework" />
+        </a>
+        <figcaption style="margin-left: auto; margin-right: auto; max-width: 900px;">
+          <strong>Three-stage optimization.</strong> (1) An initial, unscaled 3D pose is reconstructed from multi-view
+          2D keypoints via Bundle Adjustment (BA). (2) The real-world scale is recovered using a known measurement, such
+          as the length of the baseball bat (0.86 m). (3) A final, scale-aware BA is performed to refine the metric 3D
+          reconstruction.
+        </figcaption>
+      </figure>
+
+      <section id="dataset">
+        <h2 style="display: block; text-align: center; margin-bottom: 30px;">Sports-Stick-Syn Dataset</h2>
+        <figure>
+          <a href="assets/images/data.png" target="_blank" class="image-link"
+            aria-label="Open image in full resolution">
+            <img src="assets/images/data.png" alt="Our Sports-Stick-Syn dataset" />
+          </a>
+          <figcaption style="margin-left: auto; margin-right: auto;">
+            <strong>Our Sports-Stick-Syn dataset.</strong> <strong>Top:</strong> Statistics of our dataset, including
+            sports categories, number of cameras, and noise levels. <strong>Bottom:</strong> An example visualization
+            from the dataset.
+          </figcaption>
+        </figure>
+      </section>
+
+      <section id="evaluation">
+        <h2 style="display: block; text-align: center; margin-bottom: 40px;">Quantitative Results</h2>
+
+        <div class="grid-2col" style="max-width: 1000px; margin: 0 auto 32px auto;">
+          <figure style="margin: 0;">
+            <a href="assets/images/camera_error_distributions.png" target="_blank" class="image-link"
+              aria-label="Open image in full resolution">
+              <img src="assets/images/camera_error_distributions.png" alt="Per-camera Error Distribution" />
+            </a>
+            <figcaption style="border-left-color: #9C27B0;">
+              <strong>Per-camera Error Distribution.</strong> The human + stick approach yields lower errors and
+              variance in both rotation and translation compared to human-only setups.
+            </figcaption>
+          </figure>
+          <figure style="margin: 0;">
+            <a href="assets/images/noise_error_distributions.png" target="_blank" class="image-link"
+              aria-label="Open image in full resolution">
+              <img src="assets/images/noise_error_distributions.png" alt="Per-noise-level Error Distribution" />
+            </a>
+            <figcaption style="border-left-color: #FF9800;">
+              <strong>Per-noise-level Error Distribution.</strong> As noise increases, the human + stick approach
+              continues to perform robustly, maintaining a tight error profile.
+            </figcaption>
+          </figure>
+        </div>
+
+        <figure style="max-width: 600px; margin: 40px auto 0 auto;">
+          <a href="assets/images/runtime_boxplot.png" target="_blank" class="image-link"
+            aria-label="Open image in full resolution">
+            <img src="assets/images/runtime_boxplot.png" alt="Runtime distribution" />
+          </a>
+          <figcaption style="margin-left: auto; margin-right: auto;">
+            <strong>Runtime distribution.</strong> Execution time scales reasonably well with the number of cameras
+            across all trials.
+          </figcaption>
+        </figure>
+      </section>
+
+      <section id="real-scene">
+        <h2 style="display: block; text-align: center; margin-bottom: 30px;">Downstream Applications in Real Scenes</h2>
+
+
+        <figure style="margin-top: 40px;">
+          <a href="assets/images/real_scene_eval.png" target="_blank" class="image-link"
+            aria-label="Open image in full resolution">
+            <img src="assets/images/real_scene_eval.png" alt="Real Scene Evaluation" />
+          </a>
+          <figcaption style="margin-left: auto; margin-right: auto; max-width: 900px;">
+            <strong>Real Scene Evaluation.</strong> We evaluated our method in an uncontrolled outdoor scene using
+            time-synchronized cameras. Real-world factors such as illumination variation, background clutter, and
+            detector noise pose challenges that are largely absent in simulation. Our optimization effectively recovers
+            the relative camera extrinsics and reconstructs a coherent, metric-scale 3D human-club motion sequence from
+            uncalibrated inputs.
+          </figcaption>
+        </figure>
+      </section>
+
+      <figure>
+        <a href="assets/images/downstream_illustration.jpg" target="_blank" class="image-link"
+          aria-label="Open image in full resolution">
+          <img src="assets/images/downstream_illustration.jpg" alt="Enabling precise 3D sports gesture analysis" />
+        </a>
+        <figcaption style="margin-left: auto; margin-right: auto; max-width: 900px;">
+          <strong>Enabling precise 3D sports gesture analysis via tool-free self-calibration.</strong> Our method
+          utilizes rigid stick constraints to self-calibrate multi-camera setups (Left & Center), enabling scale-aware
+          3D pose reconstruction. This supports robust downstream applications in sports analytics (Right), allowing
+          for accurate analysis of sport gestures and movement.
+        </figcaption>
+      </figure>
+
+
+
+      <section id="citation" class="text-block">
+        <h2 style="display: block; text-align: center; margin-bottom: 30px;">Citation</h2>
+        <p style="text-align: left; max-width: 900px; margin: 0 auto; margin-bottom: 16px;">
+          If you find this project useful for your research, please use the following BibTeX entry:
+        </p>
+        <div
+          style="max-width: 900px; margin: 0 auto; background: #f8fbff; padding: 24px; border-radius: 12px; border: 1px solid #d0e3ff; overflow-x: auto;">
+          <pre style="margin: 0; font-family: 'Courier New', Courier, monospace; font-size: 0.95rem; color: #111;"><code>@inproceedings{yang2026multicamera,
+      title={Multi-Camera Self-Calibration in Sports Motion Capture: Leveraging Human and Stick Poses}, 
+      author={Fan Yang and Changsoo Jung and Ryosuke Kawamura and Hon Yung Wong},
+      booktitle={2026 International Conference on Automatic Face and Gesture Recognition (FG)},
+      year={2026}
+}</code></pre>
+        </div>
+      </section>
+
+  </main>
+
+  <footer
+    style="margin-top: 60px; padding: 40px 16px; background-color: #fff; border-top: 1px solid #eee; text-align: center; color: #777;">
+    <div class="container">
+      <p style="margin-bottom: 8px; font-weight: 500;">
+        &copy; 2026 The Authors. All rights reserved.
+      </p>
+      <p style="font-size: 0.9rem;">
+        Fujitsu Research and Colorado State University
+      </p>
+    </div>
+  </footer>
+
+</body>
+
+</html>
